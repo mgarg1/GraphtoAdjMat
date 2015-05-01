@@ -1,0 +1,4 @@
+C++ ideas
+------------
+-templated functions in source and header
+-inline functions in src and header file 	
