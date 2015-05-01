@@ -1,0 +1,27 @@
+circles:
+50      57      64
+50      58      263
+50      426     60
+50      437     251
+lines:
+
+-190    0
+-100    90
+102     90
+188     0
+
+slope of connections:
+dist    angle
+
+107     -1
+116     90
+161     87
+-103    -2
+
+slope of connections:
+dist    angle
+
+100     -1
+-192    90
+183     87
+-95     -2
