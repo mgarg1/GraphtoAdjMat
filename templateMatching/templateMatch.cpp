@@ -78,6 +78,8 @@ char dataBase::identifySingleCharAt(BMP &img,CI startX,CI startY,CI lenX,CI lenY
             return v[findMatchingIndex(i+startX,j+startY)].val;
         }
     }
+    //error
+    return '\0';
 }
 
 

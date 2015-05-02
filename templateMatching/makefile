@@ -14,10 +14,10 @@ $(EXECUTABLE): $(OBJECTS)
 $(PROG).o: $(PROG).cpp
 	$(CC) $(CFLAGS) -c $< 
 
-myUtilities.o: ../myUtilities.cpp
+myUtilities.o: ../myUtilities/myUtilities.cpp
 	$(CC) $(CFLAGS) -c $<
 
-EasyBMP.o: EasyBMP/EasyBMP.cpp
+EasyBMP.o: ../EasyBMP/EasyBMP.cpp
 	$(CC) $(CFLAGS) -c $<
 
 # $(OBJECTS): $(SOURCES)

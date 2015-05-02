@@ -130,6 +130,7 @@ struct circle{
     }
 };
 
+
 void HughTransformLine(const BMP &origImg,BMP &img,std::list<line> &linesVector){ 
 
     const int THRES2 = 250;
@@ -446,6 +447,169 @@ void checkEdges(BMP &img,const std::list<circle> &circleVector,const std::list<l
     }
 }
 
+
+
+void FloodFill3(BMP &img,CI i,CI j,int *grp_no,CI group){
+
+    const int h = img.TellHeight();
+    const int w = img.TellWidth();
+    const RGBApixel curPixel = *img(i,j);
+
+    // assert(sizeof(grp_no)==4*w,sizeof(grp_no));
+
+    std::function<void (CI,CI)> intRec = [&](CI x,CI y){
+      
+        if(x >= w-1 || x < 0 || y >= h-1 || y < 0 ||
+            img.GetPixel(x,y) != curPixel || grp_no[x*h+y] != 0)
+            return;
+
+        // SetPixel(img(x,y),255,0,0);
+        // pattern.offset.push_back({pattern.startX-x,pattern.startY-y});
+        grp_no[x*h+y] = group;
+
+        intRec(x+1,y);
+        intRec(x,y+1);
+        intRec(x,y-1);
+        intRec(x-1,y);
+
+        intRec(x+1,y+1);
+        intRec(x+1,y-1);
+        intRec(x-1,y+1);
+        intRec(x-1,y-1);
+    };
+    intRec(i,j);
+}
+
+void maxEliminate(BMP &img){
+
+    const int w = img.TellWidth();
+    const int h = img.TellHeight();
+
+    int groups = 1;
+
+    // int grp_no[w][h];
+    // std::array<std::array<int,h>,w> grp_no; 
+    int *grp_no;
+	int *grp_cnt = NULL;
+    
+    grp_no = new int[w*h];
+
+    //allocating 2-d arrays
+    // grp_no = new int*[w]; 
+    // for (int i = 0; i < w; ++i){
+    //     grp_no[i] = new int[h]; 
+    //     memset(grp_no[i],0,h*sizeof(int));
+    // }
+
+    //asuming img(0,0)'s pixel is background
+    RGBApixel temp = *img(0,0);
+    // SetPixel(&temp,0);
+    
+    // dbg("%lu",sizeof(*grp_no));
+
+    DFOR(i,j,w,h){
+        if(*img(i,j) != temp && (grp_no[i*h+j] == 0)){
+            FloodFill3(img,i,j,grp_no,groups);
+            groups++;
+        }
+    }
+    
+    dbg("groups : %d",groups);
+   
+    grp_cnt = new int[groups];
+    
+    DFOR(i,j,w,h){
+        grp_cnt[grp_no[i*h+j]]++;
+    }
+
+    // connectedComponent(img,grp_no,grp_cnt);
+
+    //index 0 belongs to background
+    int maxIndex = 1;
+    for(int i=2;i<groups;++i){
+    	if(grp_cnt[i] > grp_cnt[maxIndex])
+    		maxIndex = i;
+    }
+
+    // auto result = std::max_element(grp_cnt,grp_cnt + sizeof(grp_cnt));
+    
+    dbg("index : %d",maxIndex);
+    dbg("max Value : %d",grp_cnt[maxIndex]);
+ 
+
+    DFOR(i,j,w,h){
+        if(grp_no[i*h+j] == maxIndex){
+        	SetPixel(img(i,j),&temp);
+        }
+    }     
+
+    // for (int i = 0; i < w; ++i){
+    //     delete[] grp_no[i];
+    // }
+    // delete[] grp_no;
+    delete[] grp_cnt;
+}
+
+/*
+void connectedComponent(BMP &img,int **grp_no,int *grp_cnt){
+
+    const int w = img.TellWidth();
+    const int h = img.TellHeight();
+
+    int groups = 1;
+    
+    //asuming img(0,0)'s pixel is background
+    RGBApixel temp = *img(0,0);
+    // SetPixel(&temp,0);
+    
+    DFOR(i,j,w,h){
+        if(*img(i,j) != temp && (grp_no[i][j] == 0)){
+            FloodFill3(img,i,j,grp_no,groups);
+            groups++;
+        }
+    }
+    
+    dbg("%d",groups);
+   
+    grp_cnt = new int[groups];
+    
+    DFOR(i,j,w,h){
+        grp_cnt[grp_no[i][j]]++;
+    }
+}
+
+void maxEliminate(BMP &img){
+
+    const int w = img.TellWidth();
+    const int h = img.TellHeight();
+
+    //allocating 2-d arrays
+    int **grp_no;
+    int *grp_cnt = NULL;
+
+    grp_no = new int*[w]; 
+    for (int i = 0; i < w; ++i){
+        grp_no[i] = new int[h]; 
+        memset(grp_no[i],0,h*sizeof(int));
+    }
+
+    connectedComponent(img,grp_no,grp_cnt);
+
+    auto result = std::max_element(grp_cnt,grp_cnt + sizeof(grp_cnt));
+    
+    DFOR(i,j,w,h){
+        if(grp_no[i][j] == *result){
+            SetPixel(img(i,j),img(0,0)->Green);
+        }
+    }     
+
+    for (int i = 0; i < w; ++i){
+        delete[] grp_no[i];
+    }
+    delete[] grp_no;
+    delete[] grp_cnt;
+}
+*/
 void drawLinesAndCircles(BMP &img,const std::list<circle> &circleVector,const std::list<line> &linesVector){
 
     for(auto &i:circleVector){
@@ -507,10 +671,10 @@ void imgToAdjGraph(BMP &img){
     // std::cout<<"\nslope of connections:\n";
     // std::cout<<"dist\tangle\n\n";
 
-    drawLinesAndCircles(img,circleVector,linesVector);
+    // drawLinesAndCircles(img,circleVector,linesVector);
     std::cout<<"\nadjacency matrix:\n";
     checkEdges(img,circleVector,linesVector);
-
+    maxEliminate(img);
     
     // connectedComponent(img);
     

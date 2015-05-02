@@ -3,7 +3,7 @@
 #include "./myUtilities.hpp"
 
 void SetPixel(RGBApixel *p1,RGBApixel *p2){
-    SetPixel(p1,p2->Green);
+    SetPixel(p1,p2->Red,p2->Green,p2->Blue);
 }
 
 bool operator==(const RGBApixel &p1,const RGBApixel &p2){

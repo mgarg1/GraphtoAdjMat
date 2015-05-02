@@ -35,7 +35,7 @@ enum{WHITE = 255,RED = 200,GREEN = 120,BLUE = 60,DARK = 30,BLACK = 0};
 #define assert(expr,i) \
     if (!(expr)) { \
         std::cerr << "Error at line " << __LINE__ << ": " \
-            <<  "assert(" #expr ");" <<"value of i: "<<i<< std::endl; \
+            <<  "assert(" #expr ");" <<"value: "<<i<< std::endl; \
         exit(EXIT_FAILURE); \
     }
 
@@ -76,6 +76,8 @@ template<class T>
 void SetPixel(RGBApixel *p1,T b1){
     SetPixel(p1,b1,b1,b1);
 }
+
+void SetPixel(RGBApixel *,RGBApixel *);
 
 // template<class T>
 // void SetPixel(RGBApixel *,T,T,T);
