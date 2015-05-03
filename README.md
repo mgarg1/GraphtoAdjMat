@@ -4,6 +4,18 @@
 ##Description
 This project is about converting an image of Graph into its corresponding adjacency Matrix. This task can be achieved in various ways and each method is maintained in different directory. This project uses [EasyBMP](http://easybmp.sourceforge.net/) as the C++ bitmap image processing library.
 
+###Input:
+![A unweighted undirected Graph](https://github.com/mgarg1/GraphtoAdjMat/blob/master/InputImage/InputExample.png)
+
+###Output:
+```
+        A       C       B       D
+A       -       1       1       0
+C       1       -       1       1
+B       1       1       -       1
+D       0       1       1       -
+```
+
 ##Usage
 * To compile the current working implementation 
 	* use the make file in current directory
