@@ -17,9 +17,9 @@ D       0       1       1       -
 ```
 ##Usage
 * To compile the most relevant implementation just use make
->make
+> make
 * To compile the implementation of particular method use the method name as argument to make
->make method1.out
+> make method1.out
 * To execute: 
 >./method1.out 0 [Input File] 
 
