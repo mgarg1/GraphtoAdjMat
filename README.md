@@ -47,6 +47,10 @@ Method2:
 Color the line found out by Hough transform and Find the max and 
 Min point as end of the line segment
 Color only if there exists a white pixel beneath the line
+=======
+Color the line found out by Hough tranform and Find the max and 
+min point as end of the line segment
+COlor only if there exists a white pixel beneath the line
 
 Use flood fill to
 
