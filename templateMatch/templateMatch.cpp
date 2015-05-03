@@ -4,6 +4,7 @@ dbImg::dbImg(std::string fileLoc,char ch)
             :val(ch){
 
     intImg.ReadFromFile(fileLoc.c_str());
+    dbg("success : open file %s",fileLoc.c_str());
     thresholding(intImg,THRES_LIMIT);
     // intImg.WriteToFile(fileLoc.c_str());
 
@@ -32,7 +33,7 @@ int dbImg::compare(const BMP &img,const int x,const int y) const{
     const int w = img.TellWidth();
     const int h = img.TellHeight();
 
-    dbg("%d %d %d %d",endX,endY,offX,offY);
+    // dbg("%d %d %d %d",endX,endY,offX,offY);
 
     //assuming that the image will always be greater than the database image
     if(x+endX-offX > w || y+endY-offY > h){
@@ -49,8 +50,17 @@ int dbImg::compare(const BMP &img,const int x,const int y) const{
     return cnt;
 }
 
+dataBase::dataBase(std::string baseAddr,char *arr,size_t sz){
+    for(size_t i=0;i<sz;++i){
+        std::stringstream ss;
+        ss<<baseAddr<<arr[i]<<".bmp";
+        insert(ss.str(),arr[i]);
+        // dbg("opened: %d",i);
+    }
+}
+
 void dataBase::insert(std::string fileLoc,char ch){
-    v.push_back(dbImg{fileLoc,ch});
+    v.push_back(new dbImg(fileLoc,ch));
 }
 
 char dataBase::identifySingleCharAt(BMP &img,CI startX,CI startY,CI lenX,CI lenY) const{
@@ -62,12 +72,12 @@ char dataBase::identifySingleCharAt(BMP &img,CI startX,CI startY,CI lenX,CI lenY
         int maxIndex = 0;
 
         for(size_t i=0;i<v.size();++i){
-            errorTable[i] = v[i].compare(img,startX,startY);
+            errorTable[i] = v[i]->compare(img,startX,startY);
             
             if(errorTable[maxIndex] < errorTable[i])
                 maxIndex = i;
 
-            dbg("%d",errorTable[i]);
+            // dbg("%d",errorTable[i]);
         }
         return maxIndex;
     };      
@@ -75,7 +85,7 @@ char dataBase::identifySingleCharAt(BMP &img,CI startX,CI startY,CI lenX,CI lenY
     //assuming img(0,0) as background
     DFOR(i,j,lenX,lenY){
         if(*img(i+startX,j+startY) != *img(0,0)){
-            return v[findMatchingIndex(i+startX,j+startY)].val;
+            return v[findMatchingIndex(i+startX,j+startY)]->val;
         }
     }
     //error

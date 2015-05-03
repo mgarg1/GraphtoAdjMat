@@ -1,4 +1,5 @@
 #include "./myUtilities/myUtilities.hpp"
+#include "./templateMatch/templateMatch.hpp"
 
 //Bresenham Drawline algorithm
 void Drawline(BMP &img,int x1,int y1,int x2,int y2,int color){
@@ -121,10 +122,17 @@ struct line{
 };
 
 struct circle{
+    char name;
     int rad;
     int center_x;
     int center_y;
+
+    circle(int r,int cx,int cy):rad(r),center_x(cx),center_y(cy){}
     
+    void setName(char ch){
+    	name = ch;
+    }
+
     void print(){
         std::cout<<rad<<"\t"<<center_x<<"\t"<<center_y<<"\n";
     }
@@ -428,12 +436,20 @@ void checkEdges(BMP &img,const std::list<circle> &circleVector,const std::list<l
     /*this particular code is because of list nature of the containers and
     also to increase the efficincy of code by not calling the edgeExist function twice 
     for same pair of circles*/
+    std::cout<<"\t"; 
+    for(auto &i:circleVector){
+    	std::cout<<i.name<<"\t";
+    }
+    std::cout<<"\n";
 
     for(i = circleVector.cbegin(),k = 0;i != circleVector.cend(); ++i,++k){
         for(j = circleVector.cbegin(),l = 0;j != circleVector.cend(); ++j,++l){
-
+        	if(l==0){
+        		std::cout<<(*i).name<<"\t";
+        	}
             if(k == l){
-                result = 0;
+            	std::cout<<"-\t";
+                continue;
             }
             else if( l > k){
                 result = edgeExist(img,*i,*j,linesVector);
@@ -446,8 +462,6 @@ void checkEdges(BMP &img,const std::list<circle> &circleVector,const std::list<l
         std::cout<<"\n";
     }
 }
-
-
 
 void FloodFill3(BMP &img,CI i,CI j,int *grp_no,CI group){
 
@@ -546,70 +560,10 @@ void maxEliminate(BMP &img){
     // for (int i = 0; i < w; ++i){
     //     delete[] grp_no[i];
     // }
-    // delete[] grp_no;
-    delete[] grp_cnt;
-}
-
-/*
-void connectedComponent(BMP &img,int **grp_no,int *grp_cnt){
-
-    const int w = img.TellWidth();
-    const int h = img.TellHeight();
-
-    int groups = 1;
-    
-    //asuming img(0,0)'s pixel is background
-    RGBApixel temp = *img(0,0);
-    // SetPixel(&temp,0);
-    
-    DFOR(i,j,w,h){
-        if(*img(i,j) != temp && (grp_no[i][j] == 0)){
-            FloodFill3(img,i,j,grp_no,groups);
-            groups++;
-        }
-    }
-    
-    dbg("%d",groups);
-   
-    grp_cnt = new int[groups];
-    
-    DFOR(i,j,w,h){
-        grp_cnt[grp_no[i][j]]++;
-    }
-}
-
-void maxEliminate(BMP &img){
-
-    const int w = img.TellWidth();
-    const int h = img.TellHeight();
-
-    //allocating 2-d arrays
-    int **grp_no;
-    int *grp_cnt = NULL;
-
-    grp_no = new int*[w]; 
-    for (int i = 0; i < w; ++i){
-        grp_no[i] = new int[h]; 
-        memset(grp_no[i],0,h*sizeof(int));
-    }
-
-    connectedComponent(img,grp_no,grp_cnt);
-
-    auto result = std::max_element(grp_cnt,grp_cnt + sizeof(grp_cnt));
-    
-    DFOR(i,j,w,h){
-        if(grp_no[i][j] == *result){
-            SetPixel(img(i,j),img(0,0)->Green);
-        }
-    }     
-
-    for (int i = 0; i < w; ++i){
-        delete[] grp_no[i];
-    }
     delete[] grp_no;
     delete[] grp_cnt;
 }
-*/
+
 void drawLinesAndCircles(BMP &img,const std::list<circle> &circleVector,const std::list<line> &linesVector){
 
     for(auto &i:circleVector){
@@ -621,6 +575,21 @@ void drawLinesAndCircles(BMP &img,const std::list<circle> &circleVector,const st
         Drawline(img,std::get<0>(t),std::get<1>(t),
                             std::get<2>(t),std::get<3>(t),255);
     }
+}
+
+char imgArr[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D'};
+
+void nameVertices(BMP &img,std::list<circle> &circleVector){
+	BMP inImg(img);
+	maxEliminate(inImg);
+	dataBase db1(".\\templateMatch\\DB\\",imgArr,arrSize(imgArr));
+
+	for(auto &i:circleVector){
+		/*Yet to Correct*/
+		char ch = db1.identifySingleCharAt(inImg,i.center_x-(i.rad/2),i.center_y-(i.rad/2),i.rad,i.rad);
+		i.setName(ch);
+		dbg("centerx: %d, centery: %d,char ::%c",i.center_x,i.center_y,ch);
+	}
 }
 
 void imgToAdjGraph(BMP &img){
@@ -640,49 +609,22 @@ void imgToAdjGraph(BMP &img){
     filterLines(linesVector);    
 
     std::cout<<"circles:\n";
-    for(auto &i:circleVector){
-        i.print();
-    }
+    for(auto &i:circleVector){ i.print(); }
 
     std::cout<<"\nlines:\n";
-    for(auto &i:linesVector){
-        i.print();
-    }
+    for(auto &i:linesVector){ i.print(); }
 
     for(auto &i:linesVector){
         auto t = polarToCoord(img,i.rad,i.theta);
         i = {i.rad,i.theta,std::get<0>(t),std::get<1>(t),std::get<2>(t),std::get<3>(t)};
     }
 
-    // connectedComponent
-
-    // method3(circleVector,linesVector);
-
-    // std::vector<lineSeg> lineSegVector;
-    // lineToLineSegment(img,linesVector,lineSegVector);
-
-    // std::cout<<"line Segments:\n";
-    // for(auto &i:lineSegVector){
-    //     i.print();
-    // }
-
-    // checkEdgesLineSeg(circleVector,lineSegVector);
-
-    // std::cout<<"\nslope of connections:\n";
-    // std::cout<<"dist\tangle\n\n";
-
     // drawLinesAndCircles(img,circleVector,linesVector);
     std::cout<<"\nadjacency matrix:\n";
-    checkEdges(img,circleVector,linesVector);
-    maxEliminate(img);
-    
-    // connectedComponent(img);
-    
-    // const int adjMatDim = circleVector.size();
-    // int adjMat[adjMatDim][adjMatDim];
 
-    // std::cout<<"lines: "<<linesVector.size()<<"\n";
-    // std::cout<<"circles: "<<circleVector.size()<<"\n";
+    nameVertices(img,circleVector);
+    checkEdges(img,circleVector,linesVector);
+    
 }
 
 void (*fun_arr[]) (BMP &) = {

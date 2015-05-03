@@ -106,6 +106,7 @@ bool inline inRange(T val,T range,T THRES){
 */
 float dist(CI,CI,CI,CI);
 
+/*Sets valuse greater than thresValue as 255*/ 
 void thresholding(BMP &img,const int thresValue);
 
 void RGBtoHSI(BMP &);

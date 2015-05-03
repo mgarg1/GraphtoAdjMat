@@ -22,9 +22,10 @@ struct dbImg{
 
 
 struct dataBase{
-	std::vector<dbImg> v;
-	dataBase() = delete;
-	void insert(std::string fileLoc,char ch);
+	std::vector<dbImg *> v;
+	// dataBase() = delete;
+	dataBase(std::string,char *,size_t);
+    void insert(std::string,char);
 	char identifySingleCharAt(BMP &img,CI startX,CI startY,CI lenX,CI lenY) const;
 
 	/*Yet to implement*/
