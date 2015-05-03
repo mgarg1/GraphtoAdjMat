@@ -24,6 +24,9 @@ enum{WHITE = 255,RED = 200,GREEN = 120,BLUE = 60,DARK = 30,BLACK = 0};
 
 
 #define dbg(fmt, ...) \
+    fprintf(stderr,fmt "\n", ## __VA_ARGS__)
+
+#define dbgw(fmt, ...) \
     fprintf(stderr, "%s[%d]: " fmt "\n", __FILE__, __LINE__, ## __VA_ARGS__)
 
 #define arrSize(var)  (int)(sizeof(var) / sizeof(*(var)))
@@ -100,6 +103,13 @@ bool inline inRange(T val,T range,T THRES){
         return true;
     return false;
 }
+
+// template <typename T>
+// bool inline inRange(T val,T range,T THRES,T Lim){
+//     if(val < ((range + THRES) % Lim) && val > ((range - THRES) % Lim))
+//         return true;
+//     return false;
+// }
 
 /*
     returns the euclidean distance between the two points

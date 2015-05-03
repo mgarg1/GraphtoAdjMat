@@ -4,7 +4,7 @@ dbImg::dbImg(std::string fileLoc,char ch)
             :val(ch){
 
     intImg.ReadFromFile(fileLoc.c_str());
-    dbg("success : open file %s",fileLoc.c_str());
+    //dbg("success : open file %s",fileLoc.c_str());
     thresholding(intImg,THRES_LIMIT);
     // intImg.WriteToFile(fileLoc.c_str());
 
@@ -88,6 +88,7 @@ char dataBase::identifySingleCharAt(BMP &img,CI startX,CI startY,CI lenX,CI lenY
             return v[findMatchingIndex(i+startX,j+startY)]->val;
         }
     }
+    assert(0,"error identifying charcter");
     //error
     return '\0';
 }

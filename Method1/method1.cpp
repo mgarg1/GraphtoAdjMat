@@ -2,10 +2,10 @@
 #include "../templateMatch/templateMatch.hpp"
 
 
-const double thetaTHRES = 10;
-const double radTHRES = 10;
-const int minLinePixelIntensityTHRES = 250;
-const int minLineAccuTHRES = 80;
+CI thetaTHRES = 10;
+CI radTHRES = 10;
+CI minLinePixelIntensityTHRES = 250;
+CI minLineAccuTHRES = 80;
 
 //Bresenham Drawline algorithm
 void Drawline(BMP &img,int x1,int y1,int x2,int y2,int color){
@@ -81,34 +81,40 @@ polarToCoord(const BMP &img,const int rad,const double theta){
     const int center_y = img_h/2;
     //converting to radians
     const double thetaRad = theta * b2RAD;
+    const auto sinValue = sin(thetaRad);
+    const auto cosValue = cos(thetaRad);
 
     int x1,y1,x2,y2;
     std::tuple<int,int,int,int> t1;  
     if(theta >= 45 && theta <= 135){ 
-        //start to end
-        x1 = 0; 
-        x2 = img_w; 
+        double ax,bx;
 
-        //y = (rad - x cos(theta)) / sin(theta)  
-        y1 = round((rad - ((x1 - center_x ) * cos(thetaRad))) / sin(thetaRad));  
-        y2 = round((rad - ((x2 - center_x ) * cos(thetaRad))) / sin(thetaRad));  
-        
-        //apply offsets
-        y1 += center_y; 
-        y2 += center_y;
-    }  
-    else{
         //start to end
         y1 = 0; 
         y2 = img_h;
 
         //x = (rad - y sin(theta)) / cos(theta);  
-        x1 = round((rad - ((y1 - center_y ) * sin(thetaRad))) / cos(thetaRad));  
-        x2 = round((rad - ((y2 - center_y ) * sin(thetaRad))) / cos(thetaRad));  
+        ax = (rad - (y1 - center_y ) * cosValue) / sinValue;  
+        bx = (rad - (y2 - center_y ) * cosValue) / sinValue;  
         
         //apply offsets
-        x1 += center_x; 
-        x2 += center_x;
+        x1 = round(ax + center_x); 
+        x2 = round(bx + center_x);
+    }  
+    else{
+        double ay,by;
+
+        //start to end
+        x1 = 0; 
+        x2 = img_w; 
+
+        ay = (rad - (x1 - center_x) * sinValue ) / cosValue;
+        by = (rad - (x2 - center_x) * sinValue ) / cosValue;
+
+        //apply offsets
+        y1 = round(ay + center_y); 
+        y2 = round(by + center_y);
+
     }
     // std::cout<<theta<<"\t"<<rad<<"\t";
     // std::cout<<x1<<","<<y1<<" to "<<x2<<","<<y2<<std::endl;
@@ -175,17 +181,22 @@ void HughTransformLine(const BMP &origImg,BMP &img,std::list<line> &linesVector)
     DFOR(x,y,w,h){
         if(origImg.GetPixel(x,y).Green > minLinePixelIntensityTHRES){  
             for(int theta=0;theta<180;theta++){  
-              //i = xcos(theta) + ysin(theta);
-              int rad = round(((x - center_x) * cos(theta * b2RAD)) + ((y - center_y) * sin(theta * b2RAD)));  
-              // i + max_r to make everything positive
-              accumulator[max_r + rad][theta]++;  
+              //i = xsin(theta) + ycos(theta);
+                auto cosValue = cos(theta * b2RAD);
+                auto sinValue = sin(theta * b2RAD);
+
+                //here theta is the angle between the x-axis and the line perpendicular to given line  
+                //and radius is perpendicular distance of line from origin
+                int rad = round( (center_x - x) * cosValue + (center_y - y) * sinValue );  
+                // i + max_r to make everything positive
+                assert(max_r+rad > 0,max_r + rad);
+                accumulator[max_r + rad][theta]++;  
             }  
         }      
     }
 
     const int DIM = 9; 
-    // std::vector<int> radii,thetas;
-    // std::tuple<int,int,int,int> t;
+    int slope;
 
     //Search if the point is a local Maxima in accumulator
     DFOR(rad,theta,_accu_x,_accu_y){
@@ -206,7 +217,15 @@ void HughTransformLine(const BMP &origImg,BMP &img,std::list<line> &linesVector)
             }
             //if current accumulator is a local maxima
             //make line for these points    
-            linesVector.push_back(line{rad-max_r,theta});
+            
+            //we are now interested in slope of line
+            slope = theta;
+            if(theta >= 0 && theta < 90 )
+                slope += 90;
+            else if(theta >= 90 && theta <= 180)
+                slope -= 90;
+
+            linesVector.push_back(line{rad-max_r,slope});
             label1:;
         }
     }
@@ -296,7 +315,6 @@ void HughTransformCircleWithRad(const BMP &origImg,BMP &img,const int rad /*= 50
     //Search if the point is a local Maxima in accumulator
     DFOR(x,y,_accu_x,_accu_y){
         if(accumulator[x][y] > THRES3){
-            // std::cout<<"inside here";
             
             int max = accumulator[x][y];
             DFOR(k,l,DIM,DIM){
@@ -310,7 +328,6 @@ void HughTransformCircleWithRad(const BMP &origImg,BMP &img,const int rad /*= 50
                     }                                    
                 }
             }
-            // DrawCircle(img,x,y,rad,RED);
             circleVector.push_back(circle{rad,x,y});
             //if current accumulator is a local maxima
             // if(max == accumulator[x][y]){
@@ -376,30 +393,31 @@ bool edgeExist(const BMP &img,const circle &c1,const circle &c2,const std::list<
     int center_y = img.TellHeight()/2;  
 
     //temp variables to store shift origin values
-    circle tc1 = c1;
-    circle tc2 = c2;
+    // circle tc1 = c1;
+    // circle tc2 = c2;
 
-    auto shiftOrigin = [&](int &x,int &y){
-        x = center_x - x;
-        y = center_y - y;
-    };
+    // auto shiftOrigin = [&](int &x,int &y){
+    //     x = center_x - x;
+    //     y = center_y - y;
+    // };
 
-    //not required 
-    shiftOrigin(tc1.center_x,tc1.center_y);
-    shiftOrigin(tc2.center_x,tc2.center_y);
-    shiftOrigin(center_x,center_y);
+    // //not required 
+    // shiftOrigin(tc1.center_x,tc1.center_y);
+    // shiftOrigin(tc2.center_x,tc2.center_y);
+    // shiftOrigin(center_x,center_y);
    
-    double m1 = (tc1.center_y - tc2.center_y)*1.0/
-                  (tc1.center_x - tc2.center_x);
+   //slope of line joining the center of two circles
+    double m1 = (c1.center_y - c2.center_y)*1.0/
+                  (c1.center_x - c2.center_x);
 
     //slope of line joining the center of a circle and the center of the image
-    double m2 = (tc1.center_y - center_y)*1.0/
-                    (tc1.center_x - center_x);
+    double m2 = (c1.center_y - center_y)*1.0/
+                    (c1.center_x - center_x);
     
-    double angle = 90 - round(atan (m1) * 180 / PI);
+    int angle = round(atan (m1) * 180 / PI);
     
     //distance between center of one circle and the center of the image
-    double pDist = dist(tc1.center_x,tc1.center_y,center_x,center_y);
+    double pDist = dist(c1.center_x,c1.center_y,center_x,center_y);
     
     double diff1 = atan(m1)-atan(m2);
     // float diff2 = m1-m2;
@@ -408,10 +426,33 @@ bool edgeExist(const BMP &img,const circle &c1,const circle &c2,const std::list<
     
     if(tan(diff1) > 1)
         pDist = -pDist;
+    if(angle < 0)
+        angle = 180 + angle;
+
+    // dbg("r:%2f th:%2d -- c1:%c to c2:%c",pDist,angle,c1.name,c2.name);
+    
+
+    auto thetaCheck = [](CI t1,CI t2){
+        // int lim1,lim2,val;
+
+        if(t2-thetaTHRES < 0){
+            if ( (t1 >= 0 && t1 < t2+thetaTHRES) || ( t1 <= 180 &&  t1 > ( (t2-thetaTHRES)%180) ) )
+                return true;    
+        }
+        else if(t2+thetaTHRES > 180){
+            if ( (t1 >= 0 && (t1 < (t2+thetaTHRES)%180)  ) || ( t1 <= 180 && t1 > t2-thetaTHRES) )
+                return true; 
+        }
+        else{
+            if ( (t2-thetaTHRES < t1) && (t2+thetaTHRES > t1) )
+                return true; 
+        } 
+        return false;
+    };
 
     for(auto &tline : linesVector){
-        if( inRange((double)tline.theta,angle,thetaTHRES) && 
-                inRange((double)tline.rad,pDist,radTHRES))
+        if( thetaCheck(angle,tline.theta) && 
+                inRange((double)tline.rad,pDist,(double)radTHRES))
             return true;
     }
     // std::cout<<pDist<<"\t"<<angle<<"\n";
@@ -575,7 +616,7 @@ char imgArr[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D'};
 
 void nameVertices(BMP &img,std::list<circle> &circleVector){
 	BMP inImg(img);
-	maxEliminate(inImg);
+	// maxEliminate(inImg);
 	dataBase db1(".\\templateMatch\\DB\\",imgArr,arrSize(imgArr));
 
 	for(auto &i:circleVector){
@@ -594,14 +635,14 @@ void imgToAdjGraph(BMP &img){
     thresholding(origImg,THRES1);
     // sobelOperator(origImg); 
 
-/*
+
     std::list<circle> circleVector;
     HughTransformCircle(origImg,img,circleVector);
     filterCircles(circleVector);
     
-    std::cout<<"circles:\n";
-    for(auto &i:circleVector){ i.print(); }
-*/
+    // std::cout<<"circles:\n";
+    // for(auto &i:circleVector){ i.print(); }
+
     std::list<line> linesVector;
     HughTransformLine(origImg,img,linesVector);
     filterLines(linesVector);    
@@ -617,8 +658,8 @@ void imgToAdjGraph(BMP &img){
     // drawLinesAndCircles(img,circleVector,linesVector);
     std::cout<<"\nadjacency matrix:\n";
 
-    // nameVertices(img,circleVector);
-    // checkEdges(img,circleVector,linesVector);
+    nameVertices(img,circleVector);
+    checkEdges(img,circleVector,linesVector);
     
 }
 
