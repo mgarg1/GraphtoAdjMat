@@ -1,5 +1,11 @@
-#include "./myUtilities/myUtilities.hpp"
-#include "./templateMatch/templateMatch.hpp"
+#include "../myUtilities/myUtilities.hpp"
+#include "../templateMatch/templateMatch.hpp"
+
+
+const double thetaTHRES = 10;
+const double radTHRES = 10;
+const int minLinePixelIntensityTHRES = 250;
+const int minLineAccuTHRES = 80;
 
 //Bresenham Drawline algorithm
 void Drawline(BMP &img,int x1,int y1,int x2,int y2,int color){
@@ -117,7 +123,8 @@ struct line{
     int x1,y1,x2,y2;
 
     void print(){
-        std::cout<<rad<<"\t"<<theta<<"\n";
+        dbg("r:%d th:%d : (%d,%d) to (%d,%d)",rad,theta,x1,y1,x2,y2);
+        // std::cout<<rad<<"\t"<<theta<<"\n";
     }
 };
 
@@ -140,10 +147,6 @@ struct circle{
 
 
 void HughTransformLine(const BMP &origImg,BMP &img,std::list<line> &linesVector){ 
-
-    const int THRES2 = 250;
-    const int THRES3 = 80;
-    // const int THRES3 = 400;
 
     RGBtoHSI(img);
     // sobelOperator(img);
@@ -170,7 +173,7 @@ void HughTransformLine(const BMP &origImg,BMP &img,std::list<line> &linesVector)
 
     //incrmenting accumulator pixels
     DFOR(x,y,w,h){
-        if(origImg.GetPixel(x,y).Green > THRES2){  
+        if(origImg.GetPixel(x,y).Green > minLinePixelIntensityTHRES){  
             for(int theta=0;theta<180;theta++){  
               //i = xcos(theta) + ysin(theta);
               int rad = round(((x - center_x) * cos(theta * b2RAD)) + ((y - center_y) * sin(theta * b2RAD)));  
@@ -186,7 +189,7 @@ void HughTransformLine(const BMP &origImg,BMP &img,std::list<line> &linesVector)
 
     //Search if the point is a local Maxima in accumulator
     DFOR(rad,theta,_accu_x,_accu_y){
-        if(accumulator[rad][theta] > THRES3){
+        if(accumulator[rad][theta] > minLineAccuTHRES){
                 // std::cout<<"found max\n";
             
             int max = accumulator[rad][theta];
@@ -203,13 +206,7 @@ void HughTransformLine(const BMP &origImg,BMP &img,std::list<line> &linesVector)
             }
             //if current accumulator is a local maxima
             //make line for these points    
-            // radii.push_back((rad - max_r));
-            // thetas.push_back(theta);
             linesVector.push_back(line{rad-max_r,theta});
-            // t = polarToCoord(origImg,rad - max_r,theta);
-            // DrawlineSegment(origImg,img,std::get<0>(t),std::get<1>(t),
-            //                 std::get<2>(t),std::get<3>(t),RED);
-            // DrawlineFromPolar(img,rad - max_r,theta,RED);            
             label1:;
         }
     }
@@ -412,9 +409,6 @@ bool edgeExist(const BMP &img,const circle &c1,const circle &c2,const std::list<
     if(tan(diff1) > 1)
         pDist = -pDist;
 
-    const double thetaTHRES = 10;
-    const double radTHRES = 10;
-
     for(auto &tline : linesVector){
         if( inRange((double)tline.theta,angle,thetaTHRES) && 
                 inRange((double)tline.rad,pDist,radTHRES))
@@ -600,30 +594,31 @@ void imgToAdjGraph(BMP &img){
     thresholding(origImg,THRES1);
     // sobelOperator(origImg); 
 
+/*
     std::list<circle> circleVector;
     HughTransformCircle(origImg,img,circleVector);
     filterCircles(circleVector);
     
+    std::cout<<"circles:\n";
+    for(auto &i:circleVector){ i.print(); }
+*/
     std::list<line> linesVector;
     HughTransformLine(origImg,img,linesVector);
     filterLines(linesVector);    
-
-    std::cout<<"circles:\n";
-    for(auto &i:circleVector){ i.print(); }
-
-    std::cout<<"\nlines:\n";
-    for(auto &i:linesVector){ i.print(); }
 
     for(auto &i:linesVector){
         auto t = polarToCoord(img,i.rad,i.theta);
         i = {i.rad,i.theta,std::get<0>(t),std::get<1>(t),std::get<2>(t),std::get<3>(t)};
     }
 
+    std::cout<<"\nlines:\n";
+    for(auto &i:linesVector){ i.print(); }
+
     // drawLinesAndCircles(img,circleVector,linesVector);
     std::cout<<"\nadjacency matrix:\n";
 
-    nameVertices(img,circleVector);
-    checkEdges(img,circleVector,linesVector);
+    // nameVertices(img,circleVector);
+    // checkEdges(img,circleVector,linesVector);
     
 }
 
