@@ -360,6 +360,68 @@ bool edgeExist(const BMP &img,const circle &c1,const circle &c2){
 //     }
 // }
 
+void imgToAdjGraph(BMP &img){
+    const int THRES1 = 120;
+    
+    BMP origImg(img);
+    // RGBtoHSI(origImg);
+    thresholding(origImg,THRES1);
+    // sobelOperator(origImg); 
+
+    std::list<circle> circleVector;
+    HughTransformCircle(origImg,img,circleVector);
+    filterCircles(circleVector);
+    
+    std::list<line> linesVector;
+    HughTransformLine(origImg,img,linesVector);
+    filterLines(linesVector);    
+
+    std::cout<<"circles:\n";
+    for(auto &i:circleVector){
+        i.print();
+    }
+
+    std::cout<<"\nlines:\n";
+    for(auto &i:linesVector){
+        i.print();
+    }
+
+    for(auto &i:linesVector){
+        auto t = polarToCoord(img,i.rad,i.theta);
+        i = {i.rad,i.theta,std::get<0>(t),std::get<1>(t),std::get<2>(t),std::get<3>(t)};
+    }
+
+    // connectedComponent
+
+    // method3(circleVector,linesVector);
+
+    // std::vector<lineSeg> lineSegVector;
+    // lineToLineSegment(img,linesVector,lineSegVector);
+
+    // std::cout<<"line Segments:\n";
+    // for(auto &i:lineSegVector){
+    //     i.print();
+    // }
+
+    // checkEdgesLineSeg(circleVector,lineSegVector);
+
+    // std::cout<<"\nslope of connections:\n";
+    // std::cout<<"dist\tangle\n\n";
+
+    // drawLinesAndCircles(img,circleVector,linesVector);
+    std::cout<<"\nadjacency matrix:\n";
+    checkEdges(img,circleVector,linesVector);
+    maxEliminate(img);
+    
+    // connectedComponent(img);
+    
+    // const int adjMatDim = circleVector.size();
+    // int adjMat[adjMatDim][adjMatDim];
+
+    // std::cout<<"lines: "<<linesVector.size()<<"\n";
+    // std::cout<<"circles: "<<circleVector.size()<<"\n";
+}
+
 void (*fun_arr[]) (BMP &) = {
 /*1*/   imgToAdjGraph
 // /*8*/   ,HughTransformLine    

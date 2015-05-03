@@ -5,7 +5,7 @@ PROG=prog1
 
 EXECUTABLE=$(PROG).out
 # SOURCES=$(PROG).cpp ./EasyBMP/EasyBMP.cpp
-OBJECTS=$(PROG).o myUtilities.o EasyBMP.o  
+OBJECTS=$(PROG).o myUtilities.o EasyBMP.o templateMatch.o
 
 # this line gives compiler optimizations that are geared towards g++ and Pentium4 
 # computers. Comment it out if you don't have a Pentium 4 (or Athlon XP) or up
@@ -42,6 +42,8 @@ myUtilities.o: myUtilities/myUtilities.cpp
 EasyBMP.o: EasyBMP/EasyBMP.cpp
 	$(CC) $(CFLAGS) -c $<
 
+templateMatch.o: templateMatch/templateMatch.cpp
+	$(CC) $(CFLAGS) -c $<	
 
 # $(OBJECTS): $(SOURCES)
 # 	$(CC) $(CFLAGS) -c $< 

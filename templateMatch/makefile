@@ -1,10 +1,11 @@
 CC = g++
 
-PROG=templateMatch
+# PROG=templateMatchTest
+PROG=thresholding
 
 EXECUTABLE=$(PROG).out
 # SOURCES=$(PROG).cpp ./EasyBMP/EasyBMP.cpp
-OBJECTS=EasyBMP.o $(PROG).o myUtilities.o
+OBJECTS=EasyBMP.o $(PROG).o myUtilities.o templateMatch.o
 
 CFLAGS = --std=c++11 -g -Wall -Wno-unused-variable
 
@@ -14,20 +15,14 @@ $(EXECUTABLE): $(OBJECTS)
 $(PROG).o: $(PROG).cpp
 	$(CC) $(CFLAGS) -c $< 
 
+templateMatch.o: templateMatch.cpp
+	$(CC) $(CFLAGS) -c $<
+
 myUtilities.o: ../myUtilities/myUtilities.cpp
 	$(CC) $(CFLAGS) -c $<
 
 EasyBMP.o: ../EasyBMP/EasyBMP.cpp
 	$(CC) $(CFLAGS) -c $<
-
-# $(OBJECTS): $(SOURCES)
-# 	$(CC) $(CFLAGS) -c $< 
-
-
-#./EasyBMP/EasyBMP*.h
-
-# $(EXECUTABLE).o: $(SOURCE)
-# 	$(CC) $(CFLAGS) -c $< 
 
 clean: 
 	rm *.o
