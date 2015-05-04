@@ -224,14 +224,13 @@ void HughTransformLine(const BMP &origImg,BMP &img,std::list<line> &linesVector)
             //make line for these points    
             
             //we are now interested in slope of line
-            
-            // slope = theta;
-            // if(theta >= 0 && theta < 90 )
-            //     slope += 90;
-            // else if(theta >= 90 && theta <= 180)
-            //     slope -= 90;
+            slope = theta;
+            if(theta >= 0 && theta < 90 )
+                slope += 90;
+            else if(theta >= 90 && theta <= 180)
+                slope -= 90;
 
-            linesVector.push_back(line{rad-max_r,theta});
+            linesVector.push_back(line{rad-max_r,slope});
             label1:;
         }
     }
@@ -400,7 +399,7 @@ bool edgeExist(const BMP &img,const circle &c1,const circle &c2,const std::list<
     double m2 = (c1.center_y - center_y)*1.0/
                     (c1.center_x - center_x);
     
-    int angle = round(atan(m1) * 180 / PI);
+    int angle = round(atan (m1) * 180 / PI);
     
     //distance between center of one circle and the center of the image
     double pDist = dist(c1.center_x,c1.center_y,center_x,center_y);

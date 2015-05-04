@@ -5,7 +5,7 @@
 
 ###Restrictions on the image
 
-1. Radius of the circles should be between `0` to `50` pixels 
+1. Radius of the circles should be between `50` to `70` pixels 
 2. Two vertices cannot be in one line
 3. All the node labels should be from the templates provided
 4. Minimum length of the line should be `minLineAccuTHRES = 80` pixels
