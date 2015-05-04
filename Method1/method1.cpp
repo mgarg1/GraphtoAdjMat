@@ -1,11 +1,16 @@
 #include "../myUtilities/myUtilities.hpp"
 #include "../templateMatch/templateMatch.hpp"
 
-
+CI thresholdingTHRES = 120;
 CI thetaTHRES = 10;
 CI radTHRES = 10;
 CI minLinePixelIntensityTHRES = 250;
 CI minLineAccuTHRES = 80;
+CI minCirclePixelIntensityTHRES = 250;
+CI minCircleAccuTHRES = 50;
+CI minCircleRad = 50;
+CI maxCircleRad = 70;
+CI filterLineTHRES = 5;
 
 //Bresenham Drawline algorithm
 void Drawline(BMP &img,int x1,int y1,int x2,int y2,int color){
@@ -267,7 +272,7 @@ void DrawCircle(BMP &img,const int x0, const int y0, const int radius,
 }
 
 void HughTransformCircleWithRad(const BMP &origImg,BMP &img,const int rad /*= 50*/,
-    std::list<circle> &circleVector,const int THRES2 = 250,const int THRES3 = 100){ 
+    std::list<circle> &circleVector){ 
     
     // const BMP &img = Oimg;
     const int h = origImg.TellHeight();
@@ -288,7 +293,7 @@ void HughTransformCircleWithRad(const BMP &origImg,BMP &img,const int rad /*= 50
 
     //incrmenting accumulator pixels
     DFOR(x,y,w-1,h-1){       
-        if(origImg.GetPixel(x,y).Green > THRES2){ 
+        if(origImg.GetPixel(x,y).Green > minCirclePixelIntensityTHRES){ 
             /*x-coord of the circle can be in +-rad distance only
               Limits on the range of x and y coordinates of the center
             */
@@ -314,7 +319,7 @@ void HughTransformCircleWithRad(const BMP &origImg,BMP &img,const int rad /*= 50
    const int DIM = 9; 
     //Search if the point is a local Maxima in accumulator
     DFOR(x,y,_accu_x,_accu_y){
-        if(accumulator[x][y] > THRES3){
+        if(accumulator[x][y] > minCircleAccuTHRES){
             
             int max = accumulator[x][y];
             DFOR(k,l,DIM,DIM){
@@ -335,18 +340,13 @@ void HughTransformCircleWithRad(const BMP &origImg,BMP &img,const int rad /*= 50
             label2:;
         }
     }
-    // DrawCircle(Oimg,100,100,rad,RED);
 }
 
 void HughTransformCircle(const BMP& origImg,BMP &img,
-    std::list<circle> &circleVector){ 
-    const int THRES1 = 200;
-    const int THRES2 = 250;
-    const int THRES3 = 50;
-
+                            std::list<circle> &circleVector){ 
     //For smaller Circles
-    for(int i=50;i<=70;i++){
-        HughTransformCircleWithRad(origImg,img,i,circleVector,THRES2,THRES3);    
+    for(int i=minCircleRad;i<=maxCircleRad;++i){
+        HughTransformCircleWithRad(origImg,img,i,circleVector);    
     }
 }
 
@@ -369,14 +369,13 @@ void filterCircles(std::list<circle> &circleVector){
 
 void filterLines(std::list<line> &linesVector){
     auto i = linesVector.begin();
-    const int THRESH_FILTER_LINE = 5;
 
     while(i != linesVector.end()){
         auto j = i;
         ++j;
         while(j != linesVector.end()){
-            if(inRange(i->rad,j->rad,THRESH_FILTER_LINE)
-                        && inRange( i->theta, j->theta, THRESH_FILTER_LINE)){
+            if(inRange(i->rad,j->rad,filterLineTHRES)
+                        && inRange( i->theta, j->theta, filterLineTHRES)){
                 j = linesVector.erase(j);
             }
             else
@@ -391,20 +390,6 @@ bool edgeExist(const BMP &img,const circle &c1,const circle &c2,const std::list<
     
     int center_x = img.TellWidth()/2;  
     int center_y = img.TellHeight()/2;  
-
-    //temp variables to store shift origin values
-    // circle tc1 = c1;
-    // circle tc2 = c2;
-
-    // auto shiftOrigin = [&](int &x,int &y){
-    //     x = center_x - x;
-    //     y = center_y - y;
-    // };
-
-    // //not required 
-    // shiftOrigin(tc1.center_x,tc1.center_y);
-    // shiftOrigin(tc2.center_x,tc2.center_y);
-    // shiftOrigin(center_x,center_y);
    
    //slope of line joining the center of two circles
     double m1 = (c1.center_y - c2.center_y)*1.0/
@@ -418,7 +403,6 @@ bool edgeExist(const BMP &img,const circle &c1,const circle &c2,const std::list<
     
     //distance between center of one circle and the center of the image
     double pDist = dist(c1.center_x,c1.center_y,center_x,center_y);
-    
     double diff1 = atan(m1)-atan(m2);
     // float diff2 = m1-m2;
 
@@ -431,22 +415,19 @@ bool edgeExist(const BMP &img,const circle &c1,const circle &c2,const std::list<
 
     // dbg("r:%2f th:%2d -- c1:%c to c2:%c",pDist,angle,c1.name,c2.name);
     
+    assert(angle <= 180 && angle >=0,angle);
 
     auto thetaCheck = [](CI t1,CI t2){
         // int lim1,lim2,val;
 
-        if(t2-thetaTHRES < 0){
-            if ( (t1 >= 0 && t1 < t2+thetaTHRES) || ( t1 <= 180 &&  t1 > ( (t2-thetaTHRES)%180) ) )
-                return true;    
-        }
-        else if(t2+thetaTHRES > 180){
-            if ( (t1 >= 0 && (t1 < (t2+thetaTHRES)%180)  ) || ( t1 <= 180 && t1 > t2-thetaTHRES) )
+        if(t2 < 180 - thetaTHRES  && t2 > thetaTHRES){
+            if ( (t2-thetaTHRES < t1) && (t2+thetaTHRES > t1) )
                 return true; 
         }
         else{
-            if ( (t2-thetaTHRES < t1) && (t2+thetaTHRES > t1) )
-                return true; 
-        } 
+            if ( (t1 < (t2+thetaTHRES)%180)  || ( t1 > ((t2-thetaTHRES)%180) ) )
+                return true;      
+        }
         return false;
     };
 
@@ -628,11 +609,10 @@ void nameVertices(BMP &img,std::list<circle> &circleVector){
 }
 
 void imgToAdjGraph(BMP &img){
-    const int THRES1 = 120;
     
     BMP origImg(img);
     // RGBtoHSI(origImg);
-    thresholding(origImg,THRES1);
+    thresholding(origImg,thresholdingTHRES);
     // sobelOperator(origImg); 
 
 
@@ -640,8 +620,8 @@ void imgToAdjGraph(BMP &img){
     HughTransformCircle(origImg,img,circleVector);
     filterCircles(circleVector);
     
-    // std::cout<<"circles:\n";
-    // for(auto &i:circleVector){ i.print(); }
+    std::cout<<"circles:\n";
+    for(auto &i:circleVector){ i.print(); }
 
     std::list<line> linesVector;
     HughTransformLine(origImg,img,linesVector);
