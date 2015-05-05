@@ -77,9 +77,12 @@ void Drawline(BMP &img,int x1,int y1,int x2,int y2,int color){
     }
 }
 
+//works only for theta >= 0 && theta =< 180 
 std::tuple<int,int,int,int> 
 polarToCoord(const BMP &img,const int rad,const double theta){
     
+    assert(theta >= 0 && theta <= 180,theta);
+
     const int img_w = img.TellWidth();
     const int img_h = img.TellHeight();
     const int center_x = img_w/2;
@@ -92,39 +95,37 @@ polarToCoord(const BMP &img,const int rad,const double theta){
     int x1,y1,x2,y2;
     std::tuple<int,int,int,int> t1;  
     if(theta >= 45 && theta <= 135){ 
-        double ax,bx;
+        
+        double ay,by;
+        //start to end
+        x1 = 0; 
+        x2 = img_w; 
 
+        ay = (rad - (x1 - center_x) * cosValue ) / sinValue;
+        by = (rad - (x2 - center_x) * cosValue ) / sinValue;
+
+        //apply offsets
+        y1 = round(ay + center_y); 
+        y2 = round(by + center_y);
+    }  
+    else{
+        
+        double ax,bx;
         //start to end
         y1 = 0; 
         y2 = img_h;
 
         //x = (rad - y sin(theta)) / cos(theta);  
-        ax = (rad - (y1 - center_y ) * cosValue) / sinValue;  
-        bx = (rad - (y2 - center_y ) * cosValue) / sinValue;  
+        ax = (rad - (y1 - center_y ) * sinValue) / cosValue;  
+        bx = (rad - (y2 - center_y ) * sinValue) / cosValue;  
         
         //apply offsets
         x1 = round(ax + center_x); 
         x2 = round(bx + center_x);
-    }  
-    else{
-        double ay,by;
-
-        //start to end
-        x1 = 0; 
-        x2 = img_w; 
-
-        ay = (rad - (x1 - center_x) * sinValue ) / cosValue;
-        by = (rad - (x2 - center_x) * sinValue ) / cosValue;
-
-        //apply offsets
-        y1 = round(ay + center_y); 
-        y2 = round(by + center_y);
-
     }
     // std::cout<<theta<<"\t"<<rad<<"\t";
     // std::cout<<x1<<","<<y1<<" to "<<x2<<","<<y2<<std::endl;
     return std::make_tuple(x1,y1,x2,y2);
-    // DrawlineSegment(img,x1,y1,x2,y2,RED);
 }
 
 struct line{
@@ -206,13 +207,13 @@ void HughTransformLine(const BMP &origImg,BMP &img,std::list<line> &linesVector)
     //Search if the point is a local Maxima in accumulator
     DFOR(rad,theta,_accu_x,_accu_y){
         if(accumulator[rad][theta] > minLineAccuTHRES){
-                // std::cout<<"found max\n";
             
             int max = accumulator[rad][theta];
             DFOR(k,l,DIM,DIM){
                 const int rel_i = rad - DIM/2 + k ;
                 const int rel_j = theta - DIM/2 + l ; 
             
+                //if current accumulator is a local maxima
                 if(!(rel_i < 0 || rel_j < 0 || rel_i > _accu_y-1 || rel_j > _accu_x-1)){
                     if(max < accumulator[rel_i][rel_j]){
                         // max = accumulator[rel_i][rel_j];
@@ -220,22 +221,11 @@ void HughTransformLine(const BMP &origImg,BMP &img,std::list<line> &linesVector)
                     }                                    
                 }
             }
-            //if current accumulator is a local maxima
-            //make line for these points    
-            
-            //we are now interested in slope of line
-            
-            // slope = theta;
-            // if(theta >= 0 && theta < 90 )
-            //     slope += 90;
-            // else if(theta >= 90 && theta <= 180)
-            //     slope -= 90;
 
             linesVector.push_back(line{rad-max_r,theta});
             label1:;
         }
     }
-    // identifyLines(img,radii,thetas);
 }
 
 void DrawCircle(BMP &img,const int x0, const int y0, const int radius,
@@ -400,8 +390,6 @@ bool edgeExist(const BMP &img,const circle &c1,const circle &c2,const std::list<
     double m2 = (c1.center_y - center_y)*1.0/
                     (c1.center_x - center_x);
     
-    int angle = round(atan(m1) * 180 / PI);
-    
     //distance between center of one circle and the center of the image
     double pDist = dist(c1.center_x,c1.center_y,center_x,center_y);
     double diff1 = atan(m1)-atan(m2);
@@ -411,9 +399,12 @@ bool edgeExist(const BMP &img,const circle &c1,const circle &c2,const std::list<
     
     if(tan(diff1) > 1)
         pDist = -pDist;
+
+    int angle = round(atan(-1/m1)/b2RAD);
+
     if(angle < 0)
         angle = 180 + angle;
-
+    
     // dbg("r:%2f th:%2d -- c1:%c to c2:%c",pDist,angle,c1.name,c2.name);
     
     assert(angle <= 180 && angle >=0,angle);
@@ -588,9 +579,7 @@ void drawLinesAndCircles(BMP &img,const std::list<circle> &circleVector,const st
     }
     
     for(auto &i:linesVector){
-        auto t = polarToCoord(img,i.rad,i.theta);
-        Drawline(img,std::get<0>(t),std::get<1>(t),
-                            std::get<2>(t),std::get<3>(t),255);
+        Drawline(img,i.x1,i.y1,i.x2,i.y2,255);
     }
 }
 
@@ -614,8 +603,7 @@ void imgToAdjGraph(BMP &img){
     BMP origImg(img);
     // RGBtoHSI(origImg);
     thresholding(origImg,thresholdingTHRES);
-    // sobelOperator(origImg); 
-
+    // sobelOperator(origImg);
 
     std::list<circle> circleVector;
     HughTransformCircle(origImg,img,circleVector);
@@ -636,12 +624,13 @@ void imgToAdjGraph(BMP &img){
     std::cout<<"\nlines:\n";
     for(auto &i:linesVector){ i.print(); }
 
+    std::cout<<"\ncharacters recognised:\n";
     nameVertices(img,circleVector);
     
     std::cout<<"\nadjacency matrix:\n";
     checkEdges(img,circleVector,linesVector);
     
-    // drawLinesAndCircles(img,circleVector,linesVector);
+    drawLinesAndCircles(img,circleVector,linesVector);
 }
 
 void (*fun_arr[]) (BMP &) = {
