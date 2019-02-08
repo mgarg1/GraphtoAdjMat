@@ -1,13 +1,13 @@
-#Graph to Adjacency Matrix
+# Graph to Adjacency Matrix
 -----------------------------
 
-##Description
+## Description
 This project is about converting an image of Graph into its corresponding adjacency Matrix. This task can be achieved in various ways and each method is maintained in different directory. This project uses [EasyBMP](http://easybmp.sourceforge.net/) as the C++ bitmap image processing library.
 
-###Input:
+### Input:
 ![A unweighted undirected Graph](https://raw.githubusercontent.com/mgarg1/GraphtoAdjMat/master/InputImage/ExampleInput.png)
 
-###Output:
+### Output:
 ```
         A       C       B       D
 A       -       1       1       0
@@ -15,10 +15,10 @@ C       1       -       1       1
 B       1       1       -       1
 D       0       1       1       -
 ```
-###Output Image:
+### Output Image:
 ![Marked lines and circles](https://raw.githubusercontent.com/mgarg1/GraphtoAdjMat/master/InputImage/ExampleOutput.png)
 
-##Usage
+## Usage
 * To compile the most relevant implementation just use make
 > make
 * To compile the implementation of particular method use the method name as argument to make
@@ -26,7 +26,7 @@ D       0       1       1       -
 * To execute: 
 >./method1.out 0 &lt;Input File&gt; [Output File]
 
-##Project Structure
+## Project Structure
 Folder | Description
 ----------|-------------------
 *EasyBMP* | Image processing Library Source
@@ -37,7 +37,7 @@ Folder | Description
 *Method[1-N]* | Different Implementations for this project
 *nouse* | waste code
 
-##References
+## References
 Exact Algorithms used is defined in the respective method folder this section tells about the general DIP algorithms used in this project
 - [Hough Transform for Line](http://en.wikipedia.org/wiki/Hough_transform#Implementation)
 - [Hough Transform for Circle](http://en.wikipedia.org/wiki/Hough_transform#Circle_detection_process)
@@ -46,7 +46,7 @@ Exact Algorithms used is defined in the respective method folder this section te
 - [Brehensen's line Algorithm](http://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm)
 - [Otsu's method](http://en.wikipedia.org/wiki/Otsu%27s_method) for automatic image thresholding
 
-##Things yet to implement/Change
+## Things yet to implement/Change
 - [X] working on threshold
 - [] limit line segments
 - [] weighted graph
